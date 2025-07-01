@@ -20,19 +20,21 @@
       right: 10px;
       background: #ffffffcc;
       border: 1px solid #c8e6c9;
-      padding: 0.8rem;
+      padding: 0.6rem;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       z-index: 999;
+      font-size: 0.85rem;
     }
     .auth-panel input {
-      padding: 0.3rem;
-      margin: 0.2rem;
-      font-size: 0.9rem;
+      padding: 0.25rem;
+      margin: 0.2rem 0;
+      font-size: 0.8rem;
+      width: 140px;
     }
     .auth-panel button {
-      padding: 0.4rem 0.6rem;
-      font-size: 0.9rem;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
       margin: 0.2rem;
       cursor: pointer;
     }
@@ -106,21 +108,20 @@
   </style>
 </head>
 <body>
-  <!-- 로그인 / 회원가입 패널 -->
   <div class="auth-panel" id="authPanel">
     <div id="loginForm">
-      <input type="email" id="email" placeholder="이메일">
-      <input type="password" id="password" placeholder="비밀번호">
+      <input type="email" id="email" placeholder="이메일"><br>
+      <input type="password" id="password" placeholder="비밀번호"><br>
+      <input type="text" id="nickname" placeholder="닉네임 (회원가입용)"><br>
       <button onclick="login()">로그인</button>
       <button onclick="signup()">회원가입</button>
     </div>
     <div id="userPanel" style="display:none;">
-      <span><strong id="userEmail"></strong> 님</span>
+      <span><strong id="userNickname"></strong> 님</span>
       <button onclick="logout()">로그아웃</button>
     </div>
   </div>
 
-  <!-- 사이드바 -->
   <div class="sidebar">
     <div class="preview-box">
       <img id="slideshow" src="" alt="갤러리 미리보기">
@@ -130,13 +131,11 @@
     <h3><a href="board.html">💬 자유게시판</a></h3>
   </div>
 
-  <!-- 메인 콘텐츠 -->
   <div class="main-content">
     <header>
       <h1>새싹비전 축구교실</h1>
       <p>함께 뛰고, 함께 성장하는 아이들의 축구 놀이터</p>
     </header>
-
     <section id="intro">
       <h2>축구교실 소개</h2>
       <p>유치부부터 고등부까지! 즐겁고 안전하게 배우는 축구 수업</p>
@@ -147,17 +146,15 @@
       </ul>
       <p>👉 <strong>참가 문의:</strong> 155-6623-8983<br>👉 <strong>위쳇 문의:</strong> willy701062</p>
     </section>
-
     <div class="footer">
       <p>© 2025 새싹비전 축구교실</p>
     </div>
   </div>
 
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
@@ -169,7 +166,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const storage = firebase.storage();
+    const database = firebase.database();
 
     function login() {
       const email = document.getElementById("email").value;
@@ -181,7 +178,13 @@
     function signup() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
+      const nickname = document.getElementById("nickname").value;
+      if (!nickname) return alert("닉네임을 입력해주세요");
       auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+          const uid = userCredential.user.uid;
+          return database.ref('users/' + uid).set({ nickname });
+        })
         .then(() => alert("회원가입 성공!"))
         .catch(error => alert("회원가입 실패: " + error.message));
     }
@@ -193,42 +196,18 @@
     auth.onAuthStateChanged(user => {
       const loginForm = document.getElementById("loginForm");
       const userPanel = document.getElementById("userPanel");
-      const slideshow = document.getElementById("slideshow");
+      const nicknameDisplay = document.getElementById("userNickname");
       if (user) {
-        document.getElementById("userEmail").innerText = user.email;
+        firebase.database().ref('users/' + user.uid + '/nickname').once('value').then(snapshot => {
+          nicknameDisplay.innerText = snapshot.val();
+        });
         loginForm.style.display = "none";
         userPanel.style.display = "block";
-        loadSlideshowImages();
       } else {
         loginForm.style.display = "block";
         userPanel.style.display = "none";
-        slideshow.src = "";
       }
     });
-
-    let slideshowImages = [];
-    let currentIndex = 0;
-
-    function startSlideshow() {
-      const imgEl = document.getElementById("slideshow");
-      if (slideshowImages.length === 0) return;
-      imgEl.src = slideshowImages[0];
-      setInterval(() => {
-        currentIndex = (currentIndex + 1) % slideshowImages.length;
-        imgEl.src = slideshowImages[currentIndex];
-      }, 3000);
-    }
-
-    function loadSlideshowImages() {
-      const listRef = storage.ref("images");
-      listRef.listAll().then((res) => {
-        const promises = res.items.map(itemRef => itemRef.getDownloadURL());
-        Promise.all(promises).then((urls) => {
-          slideshowImages = urls;
-          startSlideshow();
-        });
-      });
-    }
   </script>
 </body>
 </html>
