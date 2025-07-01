@@ -126,7 +126,7 @@
       apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
       authDomain: "sassak-soccer.firebaseapp.com",
       projectId: "sassak-soccer",
-      storageBucket: "sassak-soccer.firebasestorage.app",
+      storageBucket: "sassak-soccer.appspot.com",
       messagingSenderId: "8582110466",
       appId: "1:8582110466:web:acb7bd3a0858a80fb0361b",
       measurementId: "G-8174DW96CV"
@@ -140,15 +140,27 @@
     function startSlideshow() {
       const imgEl = document.getElementById("slideshow");
       if (slideshowImages.length === 0) return;
+      imgEl.src = slideshowImages[0];
       setInterval(() => {
-        imgEl.src = slideshowImages[currentIndex];
         currentIndex = (currentIndex + 1) % slideshowImages.length;
+        imgEl.src = slideshowImages[currentIndex];
       }, 3000);
     }
 
-    window.onload = () => {
-      startSlideshow();
-    };
+    function loadSlideshowImages() {
+      const listRef = storage.ref("images");
+      listRef.listAll().then((res) => {
+        const promises = res.items.map((itemRef) => itemRef.getDownloadURL());
+        Promise.all(promises).then((urls) => {
+          slideshowImages = urls;
+          startSlideshow();
+        });
+      }).catch((error) => {
+        console.error("이미지 목록 불러오기 실패:", error);
+      });
+    }
+
+    window.onload = loadSlideshowImages;
   </script>
 </body>
 </html>
