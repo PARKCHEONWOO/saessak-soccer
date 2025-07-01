@@ -1,132 +1,85 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>공지사항</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #e8f5e9;
-      padding: 2rem;
-    }
-    h1 {
-      text-align: center;
-      color: #2e7d32;
-    }
-    #postForm, .post {
-      max-width: 600px;
-      margin: 1rem auto;
-      background: #fff;
-      border: 1px solid #c8e6c9;
-      border-radius: 10px;
-      padding: 1rem;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    #content {
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .post {
-      margin-bottom: 1rem;
-    }
-    .post h3 {
-      margin: 0 0 0.5rem 0;
-      color: #388e3c;
-    }
-    .post p {
-      margin: 0.5rem 0;
-    }
-    .post button {
-      background: #d32f2f;
-      color: white;
-      border: none;
-      padding: 0.3rem 0.6rem;
-      cursor: pointer;
-      border-radius: 5px;
-      font-size: 0.8rem;
-    }
-  </style>
-</head>
-<body>
-  <h1>📢 공지사항</h1>
-  <div id="postForm" style="display:none;">
-    <textarea id="content" rows="4" placeholder="공지 내용을 입력해 주세요"></textarea><br>
-    <button onclick="submitPost()">작성</button>
-  </div>
+<!-- ✅ 관리자만 공지 작성 가능하도록 리팩토링된 스크립트 부분만 수정 -->
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
+    authDomain: "sassak-soccer.firebaseapp.com",
+    projectId: "sassak-soccer",
+    storageBucket: "sassak-soccer.appspot.com",
+    messagingSenderId: "8582110466",
+    appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
 
-  <div id="posts"></div>
+  const ADMIN_UID = "foz4lhxKOrhrWwi2Hw7AJQkMcS22";
+  let currentUserId = null;
+  let currentNickname = "운영자";
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
-      authDomain: "sassak-soccer.firebaseapp.com",
-      projectId: "sassak-soccer",
-      storageBucket: "sassak-soccer.appspot.com",
-      messagingSenderId: "8582110466",
-      appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
+  auth.onAuthStateChanged(user => {
+    const postForm = document.getElementById("postForm");
+    if (user) {
+      currentUserId = user.uid;
 
-    let currentUserId = null;
-    let currentNickname = null;
-    const ADMIN_UID = "foz4lhxKOrhrWwi2Hw7AJQkMcS22"; // 관리자 이메일로 비교
-
-    auth.onAuthStateChanged(user => {
-      const postForm = document.getElementById("postForm");
-      if (user) {
-        currentUserId = user.uid;
-        db.ref("users/" + currentUserId).once("value", snap => {
-          currentNickname = snap.val() ? snap.val().nickname : "운영자";
-        });
-        if (user.email === ADMIN_UID) {
-          postForm.style.display = "block";
-        } else {
-          postForm.innerHTML = '<p style="text-align:center;color:red;">관리자만 공지사항을 작성할 수 있습니다.</p>';
+      // 닉네임 가져오기
+      db.ref("users/" + currentUserId).once("value", snap => {
+        const userInfo = snap.val();
+        if (userInfo && userInfo.nickname) {
+          currentNickname = userInfo.nickname;
         }
+      });
+
+      // ✅ 관리자만 작성 가능
+      if (user.uid === ADMIN_UID) {
+        postForm.style.display = "block";
+      } else {
+        postForm.style.display = "none";  // 숨기기
       }
+    } else {
+      postForm.style.display = "none";  // 로그인 안 된 경우
+    }
+    loadPosts();  // 로그인 여부와 관계없이 공지사항은 보여줌
+  });
+
+  function submitPost() {
+    const content = document.getElementById("content").value.trim();
+    if (!content) return alert("내용을 입력해주세요.");
+
+    if (currentUserId !== ADMIN_UID) {
+      alert("관리자만 공지사항을 작성할 수 있습니다.");
+      return;
+    }
+
+    const postId = Date.now();
+    db.ref("notices/" + postId).set({
+      uid: currentUserId,
+      content: content,
+      nickname: currentNickname,
+      createdAt: new Date().toISOString()
+    }).then(() => {
+      document.getElementById("content").value = "";
       loadPosts();
     });
+  }
 
-    function submitPost() {
-      const content = document.getElementById("content").value;
-      if (!content) return alert("내용을 입력해주세요.");
-      const postId = Date.now();
-      db.ref("notices/" + postId).set({
-        uid: currentUserId,
-        content: content,
-        nickname: currentNickname,
-        createdAt: new Date().toISOString()
-      }).then(() => {
-        document.getElementById("content").value = "";
-        loadPosts();
-      });
-    }
+  function loadPosts() {
+    db.ref("notices").once("value", snapshot => {
+      const postContainer = document.getElementById("posts");
+      postContainer.innerHTML = "";
+      const posts = snapshot.val();
+      if (!posts) return;
 
-    function loadPosts() {
-      db.ref("notices").once("value", snapshot => {
-        const postContainer = document.getElementById("posts");
-        postContainer.innerHTML = "";
-        const posts = snapshot.val();
-        if (!posts) return;
-        const entries = Object.entries(posts).sort((a, b) => b[0] - a[0]);
-        entries.forEach(([id, post]) => {
-          const postDiv = document.createElement("div");
-          postDiv.className = "post";
-          const date = new Date(post.createdAt).toLocaleString();
-          postDiv.innerHTML = `
-            <h3>${post.nickname || "익명"} - ${date}</h3>
-            <p>${post.content}</p>
-          `;
-          postContainer.appendChild(postDiv);
-        });
+      const entries = Object.entries(posts).sort((a, b) => b[0] - a[0]);
+      entries.forEach(([id, post]) => {
+        const postDiv = document.createElement("div");
+        postDiv.className = "post";
+        const date = new Date(post.createdAt).toLocaleString();
+        postDiv.innerHTML = `
+          <h3>${post.nickname || "익명"} - ${date}</h3>
+          <p>${post.content}</p>
+        `;
+        postContainer.appendChild(postDiv);
       });
-    }
-  </script>
-</body>
-</html>
+    });
+  }
+</script>
