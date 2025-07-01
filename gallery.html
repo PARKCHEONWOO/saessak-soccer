@@ -11,7 +11,9 @@
       padding: 2rem;
       text-align: center;
     }
-    h1 { color: #2e7d32; }
+    h1 {
+      color: #2e7d32;
+    }
     .gallery {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -39,8 +41,12 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    #uploadSection { margin-top: 2rem; }
-    input[type="file"] { padding: 0.5rem; }
+    #uploadSection {
+      margin-top: 2rem;
+    }
+    input[type="file"] {
+      padding: 0.5rem;
+    }
     button {
       padding: 0.5rem 1rem;
       margin-left: 0.5rem;
@@ -68,6 +74,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
@@ -79,7 +86,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db = firebase.database();
+    const database = firebase.database();
 
     const cloudName = 'dpogxbpg5';
     const unsignedPreset = 'unsigned_preset';
@@ -113,13 +120,12 @@
       return await response.json();
     }
 
-    function displayImage(key, url, isAdmin) {
+    function displayImage(url, isAdmin) {
       const gallery = document.getElementById("gallery");
       const card = document.createElement("div");
       card.className = "image-card";
       const img = document.createElement("img");
       img.src = url;
-      img.onerror = () => { img.alt = "이미지를 불러올 수 없습니다."; };
       card.appendChild(img);
 
       if (isAdmin) {
@@ -127,17 +133,15 @@
         delBtn.className = "delete-button";
         delBtn.innerText = "삭제";
         delBtn.onclick = async () => {
-          if (!confirm("정말 삭제하시겠습니까?")) return;
           try {
             const result = await deleteImageFromCloudinary(url);
             if (result.result === "ok") {
-              await db.ref("gallery/" + key).remove();
               gallery.removeChild(card);
             } else {
               alert("삭제 실패: " + JSON.stringify(result));
             }
           } catch (err) {
-            alert("삭제 오류: " + err.message);
+            alert("삭제 중 오류 발생: " + err.message);
           }
         };
         card.appendChild(delBtn);
@@ -163,18 +167,19 @@
           });
           const data = await response.json();
           if (data.secure_url) {
-            const newRef = db.ref("gallery").push();
+            displayImage(data.secure_url, currentUser && currentUser.uid === adminUID);
+
+            const newRef = database.ref("gallery").push();
             await newRef.set({
               url: data.secure_url,
-              uploader: currentUser.uid,
-              createdAt: new Date().toISOString()
+              uploadedAt: new Date().toISOString(),
+              uploadedBy: currentUser ? currentUser.uid : "anonymous"
             });
-            displayImage(newRef.key, data.secure_url, currentUser.uid === adminUID);
           } else {
-            alert("이미지 업로드 실패");
+            alert("업로드는 되었지만 이미지 URL을 받지 못했습니다.");
           }
         } catch (err) {
-          alert("오류 발생: " + err.message);
+          alert("업로드 실패: " + err.message);
         }
       }
     }
@@ -186,13 +191,11 @@
         document.getElementById("uploadSection").style.display = "block";
       }
 
-      // 이미지 불러오기 (모든 사용자에게 공개)
-      db.ref("gallery").once("value").then(snapshot => {
-        const images = snapshot.val();
-        if (!images) return;
-        Object.entries(images).forEach(([key, data]) => {
-          displayImage(key, data.url, isAdmin);
-        });
+      // 🔥 DB에서 이미지 불러오기
+      const snapshot = await database.ref("gallery").once("value");
+      snapshot.forEach(child => {
+        const data = child.val();
+        displayImage(data.url, isAdmin);
       });
     });
   </script>
