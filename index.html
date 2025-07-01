@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>새싹비전 축구교실</title>
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
   <style>
@@ -23,17 +23,9 @@
       transition: width 0.3s ease;
       overflow-x: hidden;
     }
-    .sidebar:hover {
-      width: 240px;
-    }
-    .sidebar h3 {
-      margin: 1rem 0 0.5rem;
-      white-space: nowrap;
-    }
-    .sidebar a {
-      color: #1b5e20;
-      text-decoration: none;
-    }
+    .sidebar:hover { width: 240px; }
+    .sidebar h3 { margin: 1rem 0 0.5rem; white-space: nowrap; }
+    .sidebar a { color: #1b5e20; text-decoration: none; }
     .sidebar .preview-box {
       border: 2px solid #c5e1a5;
       border-radius: 12px;
@@ -52,9 +44,7 @@
       object-fit: cover;
       border-radius: 10px;
     }
-    .main-content {
-      flex: 1;
-    }
+    .main-content { flex: 1; }
     header {
       background-color: #388e3c;
       color: white;
@@ -62,9 +52,7 @@
       text-align: center;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    header h1 {
-      font-size: 4rem;
-    }
+    header h1 { font-size: 4rem; }
     section {
       padding: 2rem;
       max-width: 800px;
@@ -77,10 +65,15 @@
       padding: 1rem;
       margin-top: 2rem;
     }
+    .auth-box {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    input { padding: 0.5rem; margin: 0.5rem; font-size: 1rem; }
+    button { padding: 0.5rem 1rem; margin: 0.5rem; font-size: 1rem; }
+    #userEmail { font-weight: bold; color: #2e7d32; }
     @media (max-width: 800px) {
-      body {
-        flex-direction: column;
-      }
+      body { flex-direction: column; }
       .sidebar {
         width: 100%;
         border-right: none;
@@ -103,24 +96,42 @@
       <h1>새싹비전 축구교실</h1>
       <p>함께 뛰고, 함께 성장하는 아이들의 축구 놀이터</p>
     </header>
+
+    <section class="auth-box" id="authBox">
+      <div id="loginForm">
+        <input type="email" id="email" placeholder="이메일">
+        <input type="password" id="password" placeholder="비밀번호">
+        <br>
+        <button onclick="login()">로그인</button>
+        <button onclick="signup()">회원가입</button>
+      </div>
+      <div id="userPanel" style="display:none;">
+        <p>환영합니다, <span id="userEmail"></span>님!</p>
+        <button onclick="logout()">로그아웃</button>
+      </div>
+    </section>
+
     <section id="intro">
       <h2>축구교실 소개</h2>
-      <p>안녕하세요! 저희 새싹비전 축구교실은 유치부부터 초등부, 중등부, 고등부까지 아이들이 건강하게 성장하고, 팀워크와 리더십을 배울 수 있도록 돕는 축구 교육 프로그램입니다.</p>
-      <p>단순히 축구 실력 향상에 그치지 않고, 즐거운 놀이와 훈련을 통해 아이들의 자신감, 협동심, 인성까지 함께 키워갑니다.</p>
+      <p>유치부부터 고등부까지! 즐겁고 안전하게 배우는 축구 수업</p>
       <ul>
         <li>⚽ <strong>운영대상:</strong> 유치부 ~ 고등부</li>
         <li>📍 <strong>운영장소:</strong> 东泽体育</li>
         <li>📅 <strong>운영시간:</strong> 주 1회, 토요일 오후 2시</li>
       </ul>
-      <p>체계적인 코칭과 안전한 환경 속에서 우리 아이들의 에너지를 마음껏 발산하고, 소중한 추억도 만들어보세요!</p>
       <p>👉 <strong>참가 문의:</strong> 155-6623-8983<br>👉 <strong>위쳇 문의:</strong> willy701062</p>
     </section>
+
     <div class="footer">
       <p>© 2025 새싹비전 축구교실</p>
     </div>
   </div>
+
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
@@ -128,11 +139,46 @@
       projectId: "sassak-soccer",
       storageBucket: "sassak-soccer.appspot.com",
       messagingSenderId: "8582110466",
-      appId: "1:8582110466:web:acb7bd3a0858a80fb0361b",
-      measurementId: "G-8174DW96CV"
+      appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
     };
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const storage = firebase.storage();
+
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(email, password)
+        .catch(error => alert("로그인 실패: " + error.message));
+    }
+
+    function signup() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(() => alert("회원가입 성공!"))
+        .catch(error => alert("회원가입 실패: " + error.message));
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    auth.onAuthStateChanged(user => {
+      const loginForm = document.getElementById("loginForm");
+      const userPanel = document.getElementById("userPanel");
+      const slideshow = document.getElementById("slideshow");
+      if (user) {
+        document.getElementById("userEmail").innerText = user.email;
+        loginForm.style.display = "none";
+        userPanel.style.display = "block";
+        loadSlideshowImages();
+      } else {
+        loginForm.style.display = "block";
+        userPanel.style.display = "none";
+        slideshow.src = "";
+      }
+    });
 
     let slideshowImages = [];
     let currentIndex = 0;
@@ -150,17 +196,13 @@
     function loadSlideshowImages() {
       const listRef = storage.ref("images");
       listRef.listAll().then((res) => {
-        const promises = res.items.map((itemRef) => itemRef.getDownloadURL());
+        const promises = res.items.map(itemRef => itemRef.getDownloadURL());
         Promise.all(promises).then((urls) => {
           slideshowImages = urls;
           startSlideshow();
         });
-      }).catch((error) => {
-        console.error("이미지 목록 불러오기 실패:", error);
       });
     }
-
-    window.onload = loadSlideshowImages;
   </script>
 </body>
 </html>
