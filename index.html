@@ -37,9 +37,9 @@
       cursor: pointer;
     }
     header {
-      background: url('https://res.cloudinary.com/dpogxbpg5/image/upload/v1751389791/dtvuidpfecnvkcgvchmr.jpg') no-repeat center center;
+      background: url('https://res.cloudinary.com/dpogxbpg5/image/upload/v1751392285/qqimjx3v6yx9yz3visfs.jpg') no-repeat center center;
       background-size: cover;
-      height: 120px;
+      height: 80px;
     }
     .nav-bar {
       display: flex;
@@ -57,13 +57,12 @@
     .main-wrapper {
       display: flex;
       flex-direction: row;
-      justify-content: center;
+      justify-content: space-between;
       align-items: flex-start;
       padding: 2rem;
     }
     .notice-box {
       width: 220px;
-      margin-right: 2rem;
       border: 2px solid #a5d6a7;
       border-radius: 12px;
       padding: 1rem;
@@ -71,11 +70,11 @@
     }
     .main-content {
       max-width: 600px;
-      text-align: center;
+      text-align: left;
+      margin: 0 auto;
     }
     .preview-box {
       width: 220px;
-      margin-left: 2rem;
       border: 2px solid #c5e1a5;
       border-radius: 12px;
       padding: 0.5rem;
@@ -221,7 +220,6 @@
       }
     });
 
-    // 🔄 갤러리 이미지 중 하나 랜덤하게 미리보기로 표시
     window.addEventListener('DOMContentLoaded', () => {
       const slideshowImg = document.getElementById('slideshow');
       const listRef = storage.ref('images');
