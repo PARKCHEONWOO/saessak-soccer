@@ -103,7 +103,7 @@
             img.src = url;
             card.appendChild(img);
 
-            if (currentUser && itemRef.name.includes(currentUser.uid)) {
+            if (currentUser && itemRef.name.startsWith(currentUser.uid + "_")) {
               const delBtn = document.createElement("button");
               delBtn.className = "delete-button";
               delBtn.innerText = "삭제";
