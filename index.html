@@ -14,6 +14,28 @@
       display: flex;
       flex-direction: row;
     }
+    .auth-panel {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #ffffffcc;
+      border: 1px solid #c8e6c9;
+      padding: 0.8rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 999;
+    }
+    .auth-panel input {
+      padding: 0.3rem;
+      margin: 0.2rem;
+      font-size: 0.9rem;
+    }
+    .auth-panel button {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.9rem;
+      margin: 0.2rem;
+      cursor: pointer;
+    }
     .sidebar {
       width: 60px;
       background-color: #e8f5e9;
@@ -65,13 +87,6 @@
       padding: 1rem;
       margin-top: 2rem;
     }
-    .auth-box {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    input { padding: 0.5rem; margin: 0.5rem; font-size: 1rem; }
-    button { padding: 0.5rem 1rem; margin: 0.5rem; font-size: 1rem; }
-    #userEmail { font-weight: bold; color: #2e7d32; }
     @media (max-width: 800px) {
       body { flex-direction: column; }
       .sidebar {
@@ -79,10 +94,33 @@
         border-right: none;
         border-bottom: 2px solid #c8e6c9;
       }
+      .auth-panel {
+        width: 100%;
+        left: 0;
+        right: 0;
+        text-align: center;
+        top: 0;
+        border-radius: 0;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- 로그인 / 회원가입 패널 -->
+  <div class="auth-panel" id="authPanel">
+    <div id="loginForm">
+      <input type="email" id="email" placeholder="이메일">
+      <input type="password" id="password" placeholder="비밀번호">
+      <button onclick="login()">로그인</button>
+      <button onclick="signup()">회원가입</button>
+    </div>
+    <div id="userPanel" style="display:none;">
+      <span><strong id="userEmail"></strong> 님</span>
+      <button onclick="logout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- 사이드바 -->
   <div class="sidebar">
     <div class="preview-box">
       <img id="slideshow" src="" alt="갤러리 미리보기">
@@ -91,25 +129,13 @@
     <h3><a href="notice.html">📢 공지사항</a></h3>
     <h3><a href="board.html">💬 자유게시판</a></h3>
   </div>
+
+  <!-- 메인 콘텐츠 -->
   <div class="main-content">
     <header>
       <h1>새싹비전 축구교실</h1>
       <p>함께 뛰고, 함께 성장하는 아이들의 축구 놀이터</p>
     </header>
-
-    <section class="auth-box" id="authBox">
-      <div id="loginForm">
-        <input type="email" id="email" placeholder="이메일">
-        <input type="password" id="password" placeholder="비밀번호">
-        <br>
-        <button onclick="login()">로그인</button>
-        <button onclick="signup()">회원가입</button>
-      </div>
-      <div id="userPanel" style="display:none;">
-        <p>환영합니다, <span id="userEmail"></span>님!</p>
-        <button onclick="logout()">로그아웃</button>
-      </div>
-    </section>
 
     <section id="intro">
       <h2>축구교실 소개</h2>
