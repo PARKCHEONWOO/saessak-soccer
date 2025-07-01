@@ -37,8 +37,8 @@
       background-color: red;
       color: white;
       border: none;
-      padding: 0.2rem 0.5rem;
-      border-radius: 5px;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
       cursor: pointer;
     }
     #uploadSection {
@@ -64,7 +64,7 @@
 <body>
   <h1>📷 활동사진 갤러리</h1>
 
-  <div id="uploadSection" style="display: none;">
+  <div id="uploadSection" style="display:none">
     <input type="file" id="fileInput" multiple accept="image/*">
     <button onclick="uploadImages()">사진 업로드</button>
   </div>
@@ -73,7 +73,7 @@
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
@@ -83,75 +83,73 @@
       messagingSenderId: "8582110466",
       appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
     };
-
     firebase.initializeApp(firebaseConfig);
-    const storage = firebase.storage();
     const auth = firebase.auth();
 
-    const gallery = document.getElementById("gallery");
-    const uploadSection = document.getElementById("uploadSection");
+    const cloudName = 'dpogxbpg5';
+    const unsignedPreset = 'unsigned_preset';
+    const adminUID = 'foz4lhxKOrhrWwi2Hw7AJQkMcS22';
     let currentUser = null;
 
-    function loadImages() {
-      const listRef = storage.ref("images");
-      listRef.listAll().then(res => {
-        res.items.forEach(itemRef => {
-          itemRef.getDownloadURL().then(url => {
-            const card = document.createElement("div");
-            card.className = "image-card";
-            const img = document.createElement("img");
-            img.src = url;
-            card.appendChild(img);
+    function displayImage(url, isAdmin) {
+      const gallery = document.getElementById("gallery");
+      const card = document.createElement("div");
+      card.className = "image-card";
+      const img = document.createElement("img");
+      img.src = url;
+      card.appendChild(img);
 
-            if (currentUser && itemRef.name.startsWith(currentUser.uid + "_")) {
-              const delBtn = document.createElement("button");
-              delBtn.className = "delete-button";
-              delBtn.innerText = "삭제";
-              delBtn.onclick = () => {
-                itemRef.delete().then(() => {
-                  alert("삭제 완료");
-                  location.reload();
-                });
-              };
-              card.appendChild(delBtn);
-            }
+      if (isAdmin) {
+        const delBtn = document.createElement("button");
+        delBtn.className = "delete-button";
+        delBtn.innerText = "삭제";
+        delBtn.onclick = () => {
+          alert("Cloudinary에서 수동 삭제 필요: 관리 콘솔에서 직접 삭제하세요.");
+        };
+        card.appendChild(delBtn);
+      }
 
-            gallery.appendChild(card);
-          });
-        });
-      }).catch(err => {
-        console.error("이미지 불러오기 오류:", err);
-      });
+      gallery.appendChild(card);
     }
 
-    function uploadImages() {
+    async function uploadImages() {
       const files = document.getElementById("fileInput").files;
       if (!files.length) return alert("사진을 선택해주세요!");
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const fileName = `${currentUser.uid}_${Date.now()}_${file.name}`;
-        const fileRef = storage.ref().child("images/" + fileName);
-        fileRef.put(file).then(() => {
-          if (i === files.length - 1) {
-            alert("사진 업로드 완료!");
-            location.reload();
-          }
-        }).catch(err => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', unsignedPreset);
+
+        try {
+          const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+            method: 'POST',
+            body: formData
+          });
+          const data = await response.json();
+          displayImage(data.secure_url, currentUser && currentUser.uid === adminUID);
+        } catch (err) {
+          console.error("업로드 실패:", err);
           alert("업로드 실패: " + err.message);
-        });
+        }
       }
     }
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        currentUser = user;
-        uploadSection.style.display = "block";
-      } else {
-        uploadSection.innerHTML = '<p style="color:red;">사진 업로드는 로그인 후 이용하실 수 있습니다.</p>';
+    auth.onAuthStateChanged(async user => {
+      currentUser = user;
+      const isAdmin = user && user.uid === adminUID;
+      if (isAdmin) {
+        document.getElementById("uploadSection").style.display = "block";
       }
-    });
 
-    window.onload = loadImages;
+      // 예시 이미지 목록 - 실제로는 서버에서 불러오거나 Cloudinary API로 관리 필요
+      const exampleImages = [
+        "https://res.cloudinary.com/dpogxbpg5/image/upload/v1719827172/sample1.jpg",
+        "https://res.cloudinary.com/dpogxbpg5/image/upload/v1719827172/sample2.jpg"
+      ];
+      exampleImages.forEach(url => displayImage(url, isAdmin));
+    });
   </script>
 </body>
 </html>
