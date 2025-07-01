@@ -70,13 +70,21 @@
     }
     .main-content { flex: 1; }
     header {
-      background-color: #388e3c;
+      background: url('https://res.cloudinary.com/dpogxbpg5/image/upload/v1751389791/dtvuidpfecnvkcgvchmr.jpg') no-repeat center center;
+      background-size: cover;
+      height: 300px;
       color: white;
-      padding: 2rem 1rem;
-      text-align: center;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 1rem;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    header h1 { font-size: 4rem; }
+    header p {
+      background-color: rgba(0,0,0,0.4);
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+    }
     section {
       padding: 2rem;
       max-width: 800px;
@@ -133,7 +141,6 @@
 
   <div class="main-content">
     <header>
-      <h1>새싹비전 축구교실</h1>
       <p>함께 뛰고, 함께 성장하는 아이들의 축구 놀이터</p>
     </header>
     <section id="intro">
