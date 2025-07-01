@@ -1,85 +1,154 @@
-<!-- ✅ 관리자만 공지 작성 가능하도록 리팩토링된 스크립트 부분만 수정 -->
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
-    authDomain: "sassak-soccer.firebaseapp.com",
-    projectId: "sassak-soccer",
-    storageBucket: "sassak-soccer.appspot.com",
-    messagingSenderId: "8582110466",
-    appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.database();
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>공지사항</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f1f8e9;
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+      color: #2e7d32;
+    }
+    #postForm {
+      display: none;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    textarea {
+      width: 90%;
+      height: 100px;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      margin-top: 0.5rem;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #388e3c;
+    }
+    .post {
+      background-color: white;
+      margin: 1rem auto;
+      max-width: 800px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .post h3 {
+      margin-top: 0;
+      font-size: 1rem;
+      color: #333;
+    }
+    .post p {
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>📢 공지사항</h1>
+  <div id="postForm">
+    <textarea id="content" placeholder="공지 내용을 입력해주세요."></textarea><br>
+    <button onclick="submitPost()">게시물 등록</button>
+  </div>
 
-  const ADMIN_UID = "foz4lhxKOrhrWwi2Hw7AJQkMcS22";
-  let currentUserId = null;
-  let currentNickname = "운영자";
+  <div id="posts"></div>
 
-  auth.onAuthStateChanged(user => {
-    const postForm = document.getElementById("postForm");
-    if (user) {
-      currentUserId = user.uid;
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
+      authDomain: "sassak-soccer.firebaseapp.com",
+      projectId: "sassak-soccer",
+      storageBucket: "sassak-soccer.appspot.com",
+      messagingSenderId: "8582110466",
+      appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
 
-      // 닉네임 가져오기
-      db.ref("users/" + currentUserId).once("value", snap => {
-        const userInfo = snap.val();
-        if (userInfo && userInfo.nickname) {
-          currentNickname = userInfo.nickname;
+    const ADMIN_UID = "foz4lhxKOrhrWwi2Hw7AJQkMcS22";
+    let currentUserId = null;
+    let currentNickname = "운영자";
+
+    auth.onAuthStateChanged(user => {
+      const postForm = document.getElementById("postForm");
+      if (user) {
+        currentUserId = user.uid;
+        db.ref("users/" + currentUserId).once("value", snap => {
+          const userInfo = snap.val();
+          if (userInfo && userInfo.nickname) {
+            currentNickname = userInfo.nickname;
+          }
+        });
+        if (user.uid === ADMIN_UID) {
+          postForm.style.display = "block";
+        } else {
+          postForm.style.display = "none";
         }
-      });
-
-      // ✅ 관리자만 작성 가능
-      if (user.uid === ADMIN_UID) {
-        postForm.style.display = "block";
       } else {
-        postForm.style.display = "none";  // 숨기기
+        postForm.style.display = "none";
       }
-    } else {
-      postForm.style.display = "none";  // 로그인 안 된 경우
-    }
-    loadPosts();  // 로그인 여부와 관계없이 공지사항은 보여줌
-  });
-
-  function submitPost() {
-    const content = document.getElementById("content").value.trim();
-    if (!content) return alert("내용을 입력해주세요.");
-
-    if (currentUserId !== ADMIN_UID) {
-      alert("관리자만 공지사항을 작성할 수 있습니다.");
-      return;
-    }
-
-    const postId = Date.now();
-    db.ref("notices/" + postId).set({
-      uid: currentUserId,
-      content: content,
-      nickname: currentNickname,
-      createdAt: new Date().toISOString()
-    }).then(() => {
-      document.getElementById("content").value = "";
       loadPosts();
     });
-  }
 
-  function loadPosts() {
-    db.ref("notices").once("value", snapshot => {
-      const postContainer = document.getElementById("posts");
-      postContainer.innerHTML = "";
-      const posts = snapshot.val();
-      if (!posts) return;
+    function submitPost() {
+      const content = document.getElementById("content").value.trim();
+      if (!content) return alert("내용을 입력해주세요.");
 
-      const entries = Object.entries(posts).sort((a, b) => b[0] - a[0]);
-      entries.forEach(([id, post]) => {
-        const postDiv = document.createElement("div");
-        postDiv.className = "post";
-        const date = new Date(post.createdAt).toLocaleString();
-        postDiv.innerHTML = `
-          <h3>${post.nickname || "익명"} - ${date}</h3>
-          <p>${post.content}</p>
-        `;
-        postContainer.appendChild(postDiv);
+      if (currentUserId !== ADMIN_UID) {
+        alert("관리자만 공지사항을 작성할 수 있습니다.");
+        return;
+      }
+
+      const postId = Date.now();
+      db.ref("notices/" + postId).set({
+        uid: currentUserId,
+        content: content,
+        nickname: currentNickname,
+        createdAt: new Date().toISOString()
+      }).then(() => {
+        document.getElementById("content").value = "";
+        loadPosts();
       });
-    });
-  }
-</script>
+    }
+
+    function loadPosts() {
+      db.ref("notices").once("value", snapshot => {
+        const postContainer = document.getElementById("posts");
+        postContainer.innerHTML = "";
+        const posts = snapshot.val();
+        if (!posts) return;
+
+        const entries = Object.entries(posts).sort((a, b) => b[0] - a[0]);
+        entries.forEach(([id, post]) => {
+          const postDiv = document.createElement("div");
+          postDiv.className = "post";
+          const date = new Date(post.createdAt).toLocaleString();
+          postDiv.innerHTML = `
+            <h3>${post.nickname || "익명"} - ${date}</h3>
+            <p>${post.content}</p>
+          `;
+          postContainer.appendChild(postDiv);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
