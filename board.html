@@ -1,0 +1,101 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>자유게시판 - 새싹비전 축구교실</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #e3f2fd;
+      padding: 2rem;
+      text-align: center;
+    }
+    h1 {
+      color: #1976d2;
+    }
+    .board {
+      max-width: 800px;
+      margin: auto;
+      text-align: left;
+      background-color: white;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .post {
+      border-bottom: 1px solid #90caf9;
+      padding: 1rem 0;
+    }
+    .post:last-child {
+      border-bottom: none;
+    }
+    .post h3 {
+      margin: 0;
+      color: #1565c0;
+    }
+    .post p {
+      margin: 0.5rem 0 0;
+      color: #444;
+    }
+    form {
+      margin-top: 2rem;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #90caf9;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1565c0;
+    }
+  </style>
+</head>
+<body>
+  <h1>💬 자유게시판</h1>
+  <div class="board" id="board">
+    <div class="post">
+      <h3>운영자</h3>
+      <p>축구교실을 통해 아이들이 많이 성장했어요! 응원합니다!</p>
+    </div>
+  </div>
+
+  <form id="postForm">
+    <input type="text" id="name" placeholder="이름" required />
+    <textarea id="message" rows="4" placeholder="내용" required></textarea>
+    <button type="submit">글 올리기</button>
+  </form>
+
+  <script>
+    const form = document.getElementById("postForm");
+    const board = document.getElementById("board");
+
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const message = document.getElementById("message").value.trim();
+      if (name && message) {
+        const div = document.createElement("div");
+        div.className = "post";
+        div.innerHTML = `<h3>${name}</h3><p>${message}</p>`;
+        board.appendChild(div);
+        form.reset();
+      }
+    });
+  </script>
+</body>
+</html>
