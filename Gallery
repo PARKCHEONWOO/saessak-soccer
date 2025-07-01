@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>겔러리 - 활동사진</title>
+  <title>갤러리 - 활동사진</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -30,7 +30,7 @@
   </style>
 </head>
 <body>
-  <h1>활동사진 겔러리</h1>
+  <h1>활동사진 갤러리</h1>
   <div class="gallery" id="gallery"></div>
   
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -40,7 +40,7 @@
       apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
       authDomain: "sassak-soccer.firebaseapp.com",
       projectId: "sassak-soccer",
-      storageBucket: "sassak-soccer.firebasestorage.app",
+      storageBucket: "sassak-soccer.appspot.com", // 수정됨
       messagingSenderId: "8582110466",
       appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
     };
@@ -59,6 +59,8 @@
             gallery.appendChild(img);
           });
         });
+      }).catch(error => {
+        console.error("이미지 불러오기 오류:", error);
       });
     }
 
