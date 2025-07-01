@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>활동사진 갤러리</title>
   <style>
     body {
@@ -13,6 +13,12 @@
     }
     h1 {
       color: #2e7d32;
+    }
+    .upload-section {
+      margin-bottom: 2rem;
+    }
+    input[type="file"] {
+      margin-top: 1rem;
     }
     .gallery {
       display: grid;
@@ -31,43 +37,66 @@
 </head>
 <body>
   <h1>📷 활동사진 갤러리</h1>
+
+  <div class="upload-section">
+    <input type="file" id="imageUpload" accept="image/*" multiple />
+    <button onclick="uploadImages()">📤 사진 업로드</button>
+    <p id="status"></p>
+  </div>
+
   <div class="gallery" id="gallery"></div>
 
-  <!-- Firebase SDK (v9+, 모듈형) -->
-  <script type="module">
-    // Firebase 모듈 가져오기
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getStorage, ref, listAll, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
-
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
       authDomain: "sassak-soccer.firebaseapp.com",
       projectId: "sassak-soccer",
-      storageBucket: "sassak-soccer.appspot.com", // 수정됨
+      storageBucket: "sassak-soccer.appspot.com",
       messagingSenderId: "8582110466",
-      appId: "1:8582110466:web:acb7bd3a0858a80fb0361b",
-      measurementId: "G-8174DW96CV"
+      appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
     };
-
-    // Firebase 초기화
-    const app = initializeApp(firebaseConfig);
-    const storage = getStorage(app);
-
+    firebase.initializeApp(firebaseConfig);
+    const storage = firebase.storage();
     const gallery = document.getElementById("gallery");
+    const status = document.getElementById("status");
 
-    async function loadImages() {
-      const listRef = ref(storage, 'images');
-      try {
-        const res = await listAll(listRef);
-        res.items.forEach(async (itemRef) => {
-          const url = await getDownloadURL(itemRef);
-          const img = document.createElement('img');
-          img.src = url;
-          gallery.appendChild(img);
-        });
-      } catch (error) {
-        console.error("이미지 로딩 오류:", error);
+    function uploadImages() {
+      const files = document.getElementById("imageUpload").files;
+      if (!files.length) {
+        status.textContent = "사진을 선택해주세요.";
+        return;
       }
+      status.textContent = "업로드 중...";
+      const uploadPromises = Array.from(files).map(file => {
+        const fileRef = storage.ref("images/" + Date.now() + "_" + file.name);
+        return fileRef.put(file);
+      });
+
+      Promise.all(uploadPromises)
+        .then(() => {
+          status.textContent = "✅ 모든 사진 업로드 완료!";
+          loadImages();
+        })
+        .catch(err => {
+          console.error(err);
+          status.textContent = "❌ 업로드 실패: " + err.message;
+        });
+    }
+
+    function loadImages() {
+      gallery.innerHTML = "";
+      const listRef = storage.ref("images");
+      listRef.listAll().then(res => {
+        res.items.forEach(itemRef => {
+          itemRef.getDownloadURL().then(url => {
+            const img = document.createElement("img");
+            img.src = url;
+            gallery.appendChild(img);
+          });
+        });
+      });
     }
 
     window.onload = loadImages;
