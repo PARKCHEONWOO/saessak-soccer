@@ -20,12 +20,26 @@
       gap: 1rem;
       margin-top: 2rem;
     }
-    .gallery img {
+    .image-card {
+      position: relative;
+    }
+    .image-card img {
       width: 100%;
       height: 200px;
       object-fit: cover;
       border-radius: 12px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+    .delete-button {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 0.2rem 0.5rem;
+      border-radius: 5px;
+      cursor: pointer;
     }
     #uploadSection {
       margin-top: 2rem;
@@ -48,7 +62,7 @@
   </style>
 </head>
 <body>
-  <h1>📷 활동사진 게러리</h1>
+  <h1>📷 활동사진 갤러리</h1>
 
   <div id="uploadSection" style="display: none;">
     <input type="file" id="fileInput" multiple accept="image/*">
@@ -76,15 +90,33 @@
 
     const gallery = document.getElementById("gallery");
     const uploadSection = document.getElementById("uploadSection");
+    let currentUser = null;
 
     function loadImages() {
       const listRef = storage.ref("images");
       listRef.listAll().then(res => {
         res.items.forEach(itemRef => {
           itemRef.getDownloadURL().then(url => {
+            const card = document.createElement("div");
+            card.className = "image-card";
             const img = document.createElement("img");
             img.src = url;
-            gallery.appendChild(img);
+            card.appendChild(img);
+
+            if (currentUser && itemRef.name.includes(currentUser.uid)) {
+              const delBtn = document.createElement("button");
+              delBtn.className = "delete-button";
+              delBtn.innerText = "삭제";
+              delBtn.onclick = () => {
+                itemRef.delete().then(() => {
+                  alert("삭제 완료");
+                  location.reload();
+                });
+              };
+              card.appendChild(delBtn);
+            }
+
+            gallery.appendChild(card);
           });
         });
       }).catch(err => {
@@ -97,7 +129,8 @@
       if (!files.length) return alert("사진을 선택해주세요!");
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const fileRef = storage.ref().child("images/" + Date.now() + "_" + file.name);
+        const fileName = `${currentUser.uid}_${Date.now()}_${file.name}`;
+        const fileRef = storage.ref().child("images/" + fileName);
         fileRef.put(file).then(() => {
           if (i === files.length - 1) {
             alert("사진 업로드 완료!");
@@ -111,6 +144,7 @@
 
     auth.onAuthStateChanged(user => {
       if (user) {
+        currentUser = user;
         uploadSection.style.display = "block";
       } else {
         uploadSection.innerHTML = '<p style="color:red;">사진 업로드는 로그인 후 이용하실 수 있습니다.</p>';
