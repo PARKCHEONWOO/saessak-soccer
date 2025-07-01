@@ -75,14 +75,14 @@
 
     let currentUserId = null;
     let currentNickname = null;
-    const ADMIN_UID = "rhksflwk123@gmail.com"; // 관리자 이메일로 비교
+    const ADMIN_UID = "rp8p15AXW1f1r6DYhNjLe5m2nS92"; // 관리자 이메일로 비교
 
     auth.onAuthStateChanged(user => {
       const postForm = document.getElementById("postForm");
       if (user) {
         currentUserId = user.uid;
         db.ref("users/" + currentUserId).once("value", snap => {
-          currentNickname = snap.val() ? snap.val().nickname : "익명";
+          currentNickname = snap.val() ? snap.val().nickname : "운영자자";
         });
         if (user.email === ADMIN_UID) {
           postForm.style.display = "block";
