@@ -1,102 +1,76 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>새싹비전 축구교실</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>활동사진 갤러리</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #e3f2fd;
+      background-color: #f1f8e9;
       padding: 2rem;
       text-align: center;
     }
     h1 {
-      color: #1565c0;
-      font-size: 2.5rem;
+      color: #2e7d32;
     }
-    p {
-      font-size: 1.2rem;
-      margin-top: 1rem;
-      color: #333;
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
     }
-    .btn {
-      display: inline-block;
-      margin-top: 1.5rem;
-      padding: 0.75rem 1.5rem;
-      background-color: #42a5f5;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .btn:hover {
-      background-color: #1e88e5;
-    }
-    .upload-section {
-      margin-top: 3rem;
-    }
-    input[type="file"] {
-      margin-top: 1rem;
+    .gallery img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
   </style>
 </head>
 <body>
-  <h1>⚽ 새싹비전 축구교실</h1>
-  <p>아이들의 꿈과 체력을 키우는 즐거운 축구교실입니다.<br/>
-     유치부부터 중등부까지, 함께 성장해요!</p>
+  <h1>📷 활동사진 갤러리</h1>
+  <div class="gallery" id="gallery"></div>
 
-  <a href="gallery.html" class="btn">📸 활동사진 보러가기</a>
+  <!-- Firebase SDK (v9+, 모듈형) -->
+  <script type="module">
+    // Firebase 모듈 가져오기
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getStorage, ref, listAll, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
 
-  <div class="upload-section">
-    <h2>📤 사진 업로드</h2>
-    <input type="file" id="fileInput" accept="image/*"/>
-    <div>
-      <button class="btn" onclick="uploadImage()">업로드하기</button>
-    </div>
-    <p id="uploadStatus"></p>
-  </div>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
       authDomain: "sassak-soccer.firebaseapp.com",
       projectId: "sassak-soccer",
-      storageBucket: "sassak-soccer.appspot.com",
+      storageBucket: "sassak-soccer.appspot.com", // 수정됨
       messagingSenderId: "8582110466",
-      appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
+      appId: "1:8582110466:web:acb7bd3a0858a80fb0361b",
+      measurementId: "G-8174DW96CV"
     };
-    firebase.initializeApp(firebaseConfig);
-    const storage = firebase.storage();
 
-    function uploadImage() {
-      const file = document.getElementById("fileInput").files[0];
-      const status = document.getElementById("uploadStatus");
+    // Firebase 초기화
+    const app = initializeApp(firebaseConfig);
+    const storage = getStorage(app);
 
-      if (!file) {
-        status.textContent = "파일을 선택해 주세요.";
-        return;
+    const gallery = document.getElementById("gallery");
+
+    async function loadImages() {
+      const listRef = ref(storage, 'images');
+      try {
+        const res = await listAll(listRef);
+        res.items.forEach(async (itemRef) => {
+          const url = await getDownloadURL(itemRef);
+          const img = document.createElement('img');
+          img.src = url;
+          gallery.appendChild(img);
+        });
+      } catch (error) {
+        console.error("이미지 로딩 오류:", error);
       }
-
-      const storageRef = storage.ref("images/" + Date.now() + "_" + file.name);
-      const uploadTask = storageRef.put(file);
-
-      uploadTask.on(
-        "state_changed",
-        null,
-        (error) => {
-          console.error("업로드 실패:", error);
-          status.textContent = "업로드 실패: " + error.message;
-        },
-        () => {
-          status.textContent = "✅ 업로드 완료!";
-        }
-      );
     }
+
+    window.onload = loadImages;
   </script>
 </body>
 </html>
