@@ -120,12 +120,15 @@
       return await response.json();
     }
 
-    function displayImage(url, isAdmin) {
+    function displayImage(url, isAdmin, key) {
       const gallery = document.getElementById("gallery");
       const card = document.createElement("div");
       card.className = "image-card";
       const img = document.createElement("img");
       img.src = url;
+      img.onerror = () => {
+        img.alt = "이미지를 불러올 수 없습니다.";
+      };
       card.appendChild(img);
 
       if (isAdmin) {
@@ -136,6 +139,7 @@
           try {
             const result = await deleteImageFromCloudinary(url);
             if (result.result === "ok") {
+              await database.ref("gallery").child(key).remove();
               gallery.removeChild(card);
             } else {
               alert("삭제 실패: " + JSON.stringify(result));
@@ -167,14 +171,13 @@
           });
           const data = await response.json();
           if (data.secure_url) {
-            displayImage(data.secure_url, currentUser && currentUser.uid === adminUID);
-
             const newRef = database.ref("gallery").push();
             await newRef.set({
               url: data.secure_url,
               uploadedAt: new Date().toISOString(),
               uploadedBy: currentUser ? currentUser.uid : "anonymous"
             });
+            displayImage(data.secure_url, currentUser && currentUser.uid === adminUID, newRef.key);
           } else {
             alert("업로드는 되었지만 이미지 URL을 받지 못했습니다.");
           }
@@ -191,11 +194,11 @@
         document.getElementById("uploadSection").style.display = "block";
       }
 
-      // 🔥 DB에서 이미지 불러오기
       const snapshot = await database.ref("gallery").once("value");
       snapshot.forEach(child => {
         const data = child.val();
-        displayImage(data.url, isAdmin);
+        const key = child.key;
+        displayImage(data.url, isAdmin, key);
       });
     });
   </script>
