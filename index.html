@@ -10,7 +10,11 @@
       font-family: 'Jua', sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #f0f8ff;
+      background-image: url('https://res.cloudinary.com/dpogxbpg5/image/upload/v1719834753/520ea148-5c1a-4364-888b-f23e369b446c.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-attachment: fixed;
       display: flex;
       flex-direction: row;
     }
@@ -40,7 +44,7 @@
     }
     .sidebar {
       width: 60px;
-      background-color: #e8f5e9;
+      background-color: #e8f5e9cc;
       padding: 1rem 0.5rem;
       border-right: 2px solid #c8e6c9;
       box-shadow: 2px 0 5px rgba(0,0,0,0.05);
@@ -68,15 +72,21 @@
       object-fit: cover;
       border-radius: 10px;
     }
-    .main-content { flex: 1; }
-    header {
-      background-color: #388e3c;
-      color: white;
-      padding: 2rem 1rem;
-      text-align: center;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    .main-content {
+      flex: 1;
+      backdrop-filter: blur(5px);
+      background-color: rgba(255, 255, 255, 0.7);
     }
-    header h1 { font-size: 4rem; }
+    header {
+      background-image: url('https://res.cloudinary.com/dpogxbpg5/image/upload/yy6y7bpr6bveolfspkku');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     section {
       padding: 2rem;
       max-width: 800px;
@@ -132,10 +142,6 @@
   </div>
 
   <div class="main-content">
-    <header>
-      <h1>새싹비전 축구교실</h1>
-      <p>함께 뛰고, 함께 성장하는 아이들의 축구 놀이터</p>
-    </header>
     <section id="intro">
       <h2>축구교실 소개</h2>
       <p>유치부부터 고등부까지! 즐겁고 안전하게 배우는 축구 수업</p>
@@ -154,7 +160,6 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
