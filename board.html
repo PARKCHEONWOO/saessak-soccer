@@ -1,101 +1,197 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>자유게시판 - 새싹비전 축구교실</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>자유게시판</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #e3f2fd;
+      background-color: #e8f5e9;
       padding: 2rem;
-      text-align: center;
     }
     h1 {
-      color: #1976d2;
+      text-align: center;
+      color: #2e7d32;
     }
-    .board {
-      max-width: 800px;
-      margin: auto;
-      text-align: left;
-      background-color: white;
+    #postForm, .post {
+      max-width: 600px;
+      margin: 1rem auto;
+      background: #fff;
+      border: 1px solid #c8e6c9;
+      border-radius: 10px;
       padding: 1rem;
-      border-radius: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
     .post {
-      border-bottom: 1px solid #90caf9;
-      padding: 1rem 0;
-    }
-    .post:last-child {
-      border-bottom: none;
+      margin-bottom: 1rem;
     }
     .post h3 {
-      margin: 0;
-      color: #1565c0;
+      margin: 0 0 0.5rem 0;
+      color: #388e3c;
     }
     .post p {
-      margin: 0.5rem 0 0;
-      color: #444;
+      margin: 0.5rem 0;
     }
-    form {
-      margin-top: 2rem;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.5rem;
-      margin-bottom: 1rem;
-      border: 1px solid #90caf9;
-      border-radius: 6px;
-      font-size: 1rem;
-    }
-    button {
-      background-color: #1976d2;
+    .post button {
+      background: #d32f2f;
       color: white;
       border: none;
-      padding: 0.5rem 1.5rem;
-      border-radius: 6px;
-      font-size: 1rem;
+      padding: 0.3rem 0.6rem;
       cursor: pointer;
+      border-radius: 5px;
+      font-size: 0.8rem;
     }
-    button:hover {
-      background-color: #1565c0;
+    .comments {
+      margin-top: 1rem;
+      border-top: 1px solid #ccc;
+      padding-top: 0.5rem;
+    }
+    .comments p {
+      margin: 0.3rem 0;
+      font-size: 0.9rem;
+    }
+    .comments input {
+      width: 80%;
+      padding: 0.3rem;
+      margin-right: 0.3rem;
+      font-size: 0.85rem;
+    }
+    .comments button {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.85rem;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <h1>💬 자유게시판</h1>
-  <div class="board" id="board">
-    <div class="post">
-      <h3>운영자</h3>
-      <p>축구교실을 통해 아이들이 많이 성장했어요! 응원합니다!</p>
-    </div>
+  <div id="postForm" style="display:none;">
+    <textarea id="content" rows="4" placeholder="자유롭게 글을 작성해 주세요"></textarea><br>
+    <button onclick="submitPost()">작성</button>
   </div>
 
-  <form id="postForm">
-    <input type="text" id="name" placeholder="이름" required />
-    <textarea id="message" rows="4" placeholder="내용" required></textarea>
-    <button type="submit">글 올리기</button>
-  </form>
+  <div id="posts"></div>
 
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script>
-    const form = document.getElementById("postForm");
-    const board = document.getElementById("board");
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
+      authDomain: "sassak-soccer.firebaseapp.com",
+      projectId: "sassak-soccer",
+      storageBucket: "sassak-soccer.appspot.com",
+      messagingSenderId: "8582110466",
+      appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
 
-    form.addEventListener("submit", function(e) {
-      e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const message = document.getElementById("message").value.trim();
-      if (name && message) {
-        const div = document.createElement("div");
-        div.className = "post";
-        div.innerHTML = `<h3>${name}</h3><p>${message}</p>`;
-        board.appendChild(div);
-        form.reset();
+    let currentUserId = null;
+    let currentNickname = null;
+
+    auth.onAuthStateChanged(user => {
+      const postForm = document.getElementById("postForm");
+      if (user) {
+        currentUserId = user.uid;
+        db.ref("users/" + currentUserId).once("value", snap => {
+          currentNickname = snap.val() ? snap.val().nickname : "익명";
+        });
+        postForm.style.display = "block";
+      } else {
+        postForm.innerHTML = '<p style="text-align:center;color:red;">로그인 후 글 작성이 가능합니다.</p>';
       }
+      loadPosts();
     });
+
+    function submitPost() {
+      const content = document.getElementById("content").value;
+      if (!content) return alert("내용을 입력해주세요.");
+      const postId = Date.now();
+      db.ref("posts/" + postId).set({
+        uid: currentUserId,
+        content: content,
+        nickname: currentNickname,
+        createdAt: new Date().toISOString()
+      }).then(() => {
+        document.getElementById("content").value = "";
+        loadPosts();
+      });
+    }
+
+    function loadPosts() {
+      db.ref("posts").once("value", snapshot => {
+        const postContainer = document.getElementById("posts");
+        postContainer.innerHTML = "";
+        const posts = snapshot.val();
+        if (!posts) return;
+        const entries = Object.entries(posts).sort((a, b) => b[0] - a[0]);
+        entries.forEach(([id, post]) => {
+          const postDiv = document.createElement("div");
+          postDiv.className = "post";
+          const date = new Date(post.createdAt).toLocaleString();
+          postDiv.innerHTML = `
+            <h3>${post.nickname || "익명"} - ${date}</h3>
+            <p>${post.content}</p>
+            ${post.uid === currentUserId ? `<button onclick="deletePost('${id}')">삭제</button>` : ""}
+            <div class="comments" id="comments-${id}">
+              <div id="commentList-${id}"></div>
+              ${currentUserId ? `
+                <input type="text" id="commentInput-${id}" placeholder="댓글 입력">
+                <button onclick="addComment('${id}')">등록</button>
+              ` : '<p style="color:gray;">로그인 후 댓글 작성 가능</p>'}
+            </div>
+          `;
+          postContainer.appendChild(postDiv);
+          loadComments(id);
+        });
+      });
+    }
+
+    function deletePost(id) {
+      if (confirm("정말 삭제하시겠습니까?")) {
+        db.ref("posts/" + id).remove().then(() => loadPosts());
+        db.ref("comments/" + id).remove();
+      }
+    }
+
+    function addComment(postId) {
+      const input = document.getElementById(`commentInput-${postId}`);
+      const comment = input.value;
+      if (!comment) return;
+      const commentId = Date.now();
+      db.ref(`comments/${postId}/${commentId}`).set({
+        uid: currentUserId,
+        nickname: currentNickname,
+        text: comment,
+        createdAt: new Date().toISOString()
+      }).then(() => {
+        input.value = "";
+        loadComments(postId);
+      });
+    }
+
+    function deleteComment(postId, commentId) {
+      db.ref(`comments/${postId}/${commentId}`).remove().then(() => loadComments(postId));
+    }
+
+    function loadComments(postId) {
+      db.ref(`comments/${postId}`).once("value", snapshot => {
+        const list = document.getElementById(`commentList-${postId}`);
+        list.innerHTML = "";
+        const comments = snapshot.val();
+        if (!comments) return;
+        Object.entries(comments).forEach(([cid, comment]) => {
+          const p = document.createElement("p");
+          const time = new Date(comment.createdAt).toLocaleTimeString();
+          p.innerHTML = `<strong>${comment.nickname || "익명"}</strong> [${time}]: ${comment.text}
+            ${comment.uid === currentUserId ? `<button onclick="deleteComment('${postId}', '${cid}')">삭제</button>` : ""}`;
+          list.appendChild(p);
+        });
+      });
+    }
   </script>
 </body>
 </html>
