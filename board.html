@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>가장 자주 게시보드</title>
+  <title>자유게시판</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -46,14 +46,35 @@
       border-radius: 5px;
       font-size: 0.8rem;
     }
+    .comments {
+      margin-top: 1rem;
+      border-top: 1px solid #ccc;
+      padding-top: 0.5rem;
+    }
+    .comments p {
+      margin: 0.3rem 0;
+      font-size: 0.9rem;
+    }
+    .comments input {
+      width: 80%;
+      padding: 0.3rem;
+      margin-right: 0.3rem;
+      font-size: 0.85rem;
+    }
+    .comments button {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h1>💬 자주게시판</h1>
+  <h1>💬 자유게시판</h1>
   <div id="postForm" style="display:none;">
-    <textarea id="content" rows="4" placeholder="자주드림을 입력해주세요"></textarea><br>
+    <textarea id="content" rows="4" placeholder="자유롭게 글을 작성해 주세요"></textarea><br>
     <button onclick="submitPost()">작성</button>
   </div>
+
   <div id="posts"></div>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -78,7 +99,7 @@
     async function getNickname(uid) {
       const snap = await db.ref("users/" + uid).once("value");
       const val = snap.val();
-      return val && val.nickname ? val.nickname : "이름 없음";
+      return val && val.nickname ? val.nickname : "익명";
     }
 
     auth.onAuthStateChanged(async user => {
@@ -88,7 +109,7 @@
         currentNickname = await getNickname(currentUserId);
         postForm.style.display = "block";
       } else {
-        postForm.innerHTML = '<p style="text-align:center;color:red;">\uc5f0결 후 글 작성이 가능합니다.</p>';
+        postForm.innerHTML = '<p style="text-align:center;color:red;">로그인 후 글 작성이 가능합니다.</p>';
       }
       loadPosts();
     });
@@ -96,12 +117,14 @@
     async function submitPost() {
       const content = document.getElementById("content").value.trim();
       if (!content) return alert("내용을 입력해주세요.");
-      if (!currentUserId || !currentNickname) return;
+      if (!currentNickname && currentUserId) {
+        currentNickname = await getNickname(currentUserId);
+      }
       const postId = Date.now();
       await db.ref("posts/" + postId).set({
         uid: currentUserId,
         content: content,
-        nickname: currentNickname,
+        nickname: currentNickname || "익명",
         createdAt: new Date().toISOString()
       });
       document.getElementById("content").value = "";
@@ -120,11 +143,19 @@
           postDiv.className = "post";
           const date = new Date(post.createdAt).toLocaleString();
           postDiv.innerHTML = `
-            <h3>${post.nickname || "이름 없음"} - ${date}</h3>
+            <h3>${post.nickname || "익명"} - ${date}</h3>
             <p>${post.content}</p>
             ${post.uid === currentUserId ? `<button onclick="deletePost('${id}')">삭제</button>` : ""}
+            <div class="comments" id="comments-${id}">
+              <div id="commentList-${id}"></div>
+              ${currentUserId ? `
+                <input type="text" id="commentInput-${id}" placeholder="댓글 입력">
+                <button onclick="addComment('${id}')">등록</button>
+              ` : '<p style="color:gray;">로그인 후 댓글 작성 가능</p>'}
+            </div>
           `;
           postContainer.appendChild(postDiv);
+          loadComments(id);
         });
       });
     }
@@ -132,7 +163,44 @@
     function deletePost(id) {
       if (confirm("정말 삭제하시겠습니까?")) {
         db.ref("posts/" + id).remove().then(() => loadPosts());
+        db.ref("comments/" + id).remove();
       }
+    }
+
+    function addComment(postId) {
+      const input = document.getElementById(`commentInput-${postId}`);
+      const comment = input.value;
+      if (!comment) return;
+      const commentId = Date.now();
+      db.ref(`comments/${postId}/${commentId}`).set({
+        uid: currentUserId,
+        nickname: currentNickname,
+        text: comment,
+        createdAt: new Date().toISOString()
+      }).then(() => {
+        input.value = "";
+        loadComments(postId);
+      });
+    }
+
+    function deleteComment(postId, commentId) {
+      db.ref(`comments/${postId}/${commentId}`).remove().then(() => loadComments(postId));
+    }
+
+    function loadComments(postId) {
+      db.ref(`comments/${postId}`).once("value", snapshot => {
+        const list = document.getElementById(`commentList-${postId}`);
+        list.innerHTML = "";
+        const comments = snapshot.val();
+        if (!comments) return;
+        Object.entries(comments).forEach(([cid, comment]) => {
+          const time = new Date(comment.createdAt).toLocaleTimeString();
+          const p = document.createElement("p");
+          p.innerHTML = `<strong>${comment.nickname || "익명"}</strong> [${time}]: ${comment.text}
+            ${comment.uid === currentUserId ? `<button onclick="deleteComment('${postId}', '${cid}')">삭제</button>` : ""}`;
+          list.appendChild(p);
+        });
+      });
     }
   </script>
 </body>
