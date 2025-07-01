@@ -23,6 +23,10 @@
       padding: 1rem;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
+    #content {
+      width: 100%;
+      box-sizing: border-box;
+    }
     .post {
       margin-bottom: 1rem;
     }
@@ -184,8 +188,8 @@
         const comments = snapshot.val();
         if (!comments) return;
         Object.entries(comments).forEach(([cid, comment]) => {
-          const p = document.createElement("p");
           const time = new Date(comment.createdAt).toLocaleTimeString();
+          const p = document.createElement("p");
           p.innerHTML = `<strong>${comment.nickname || "익명"}</strong> [${time}]: ${comment.text}
             ${comment.uid === currentUserId ? `<button onclick="deleteComment('${postId}', '${cid}')">삭제</button>` : ""}`;
           list.appendChild(p);
