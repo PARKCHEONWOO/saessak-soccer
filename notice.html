@@ -3,56 +3,132 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>공지사항 - 새싹비전 축구교실</title>
+  <title>공지사항</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #fffde7;
-      margin: 0;
+      background-color: #e8f5e9;
       padding: 2rem;
     }
     h1 {
       text-align: center;
-      color: #f57f17;
+      color: #2e7d32;
     }
-    .notice-container {
-      max-width: 800px;
-      margin: 2rem auto;
-      background-color: #fff8e1;
-      border: 2px solid #ffe082;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    #postForm, .post {
+      max-width: 600px;
+      margin: 1rem auto;
+      background: #fff;
+      border: 1px solid #c8e6c9;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-    .notice {
-      padding: 1rem 0;
-      border-bottom: 1px solid #ffd54f;
+    #content {
+      width: 100%;
+      box-sizing: border-box;
     }
-    .notice:last-child {
-      border-bottom: none;
+    .post {
+      margin-bottom: 1rem;
     }
-    .notice-title {
-      font-weight: bold;
-      font-size: 1.2rem;
-      color: #ff6f00;
+    .post h3 {
+      margin: 0 0 0.5rem 0;
+      color: #388e3c;
     }
-    .notice-date {
-      font-size: 0.9rem;
-      color: #999;
-     용</div>
-      <div class="notice-date">2025-07-01</div>
-      <p>다음학기부터는 좀 더 체계적이고, 즐거운 축구교실이 진행됩니다. 많은 관심 부탁드립니다. 앞으로의 추후 공지는 웹사이트 혹은 위쳇 방에서 알려드리도록 하겠습니다. 감사합니다.</p>
-    </div>
-    <div class="notice">
-      <div class="notice-title">수업 진행 안내</div>
-      <div class="notice-date">2025-06-25</div>
-      <p>별도 공지가 없을 시, 매주 토요일 오후 2시에 수업을 진행합니다. 장소는 东泽体育입니다.</p>
-    </div>
-    <div class="notice">
-      <div class="notice-title">유니폼 주문 신청</div>
-      <div class="notice-date">2025-06-18</div>
-      <p>유니폼 신청은 개별로 연락부탁드립니다. 학부모님들의 많은 협조 부탁드립니다.</p>
-    </div>
+    .post p {
+      margin: 0.5rem 0;
+    }
+    .post button {
+      background: #d32f2f;
+      color: white;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>📢 공지사항</h1>
+  <div id="postForm" style="display:none;">
+    <textarea id="content" rows="4" placeholder="공지 내용을 입력해 주세요"></textarea><br>
+    <button onclick="submitPost()">작성</button>
   </div>
+
+  <div id="posts"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
+      authDomain: "sassak-soccer.firebaseapp.com",
+      projectId: "sassak-soccer",
+      storageBucket: "sassak-soccer.appspot.com",
+      messagingSenderId: "8582110466",
+      appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    let currentUserId = null;
+    let currentNickname = null;
+    const ADMIN_UID = "rhksflwk123@gmail.com"; // 관리자 이메일로 비교
+
+    auth.onAuthStateChanged(user => {
+      const postForm = document.getElementById("postForm");
+      if (user) {
+        currentUserId = user.uid;
+        db.ref("users/" + currentUserId).once("value", snap => {
+          currentNickname = snap.val() ? snap.val().nickname : "익명";
+        });
+        if (user.email === ADMIN_UID) {
+          postForm.style.display = "block";
+        } else {
+          postForm.innerHTML = '<p style="text-align:center;color:red;">관리자만 공지사항을 작성할 수 있습니다.</p>';
+        }
+      } else {
+        postForm.innerHTML = '<p style="text-align:center;color:red;">로그인 후 공지사항을 볼 수 있습니다.</p>';
+      }
+      loadPosts();
+    });
+
+    function submitPost() {
+      const content = document.getElementById("content").value;
+      if (!content) return alert("내용을 입력해주세요.");
+      const postId = Date.now();
+      db.ref("notices/" + postId).set({
+        uid: currentUserId,
+        content: content,
+        nickname: currentNickname,
+        createdAt: new Date().toISOString()
+      }).then(() => {
+        document.getElementById("content").value = "";
+        loadPosts();
+      });
+    }
+
+    function loadPosts() {
+      db.ref("notices").once("value", snapshot => {
+        const postContainer = document.getElementById("posts");
+        postContainer.innerHTML = "";
+        const posts = snapshot.val();
+        if (!posts) return;
+        const entries = Object.entries(posts).sort((a, b) => b[0] - a[0]);
+        entries.forEach(([id, post]) => {
+          const postDiv = document.createElement("div");
+          postDiv.className = "post";
+          const date = new Date(post.createdAt).toLocaleString();
+          postDiv.innerHTML = `
+            <h3>${post.nickname || "익명"} - ${date}</h3>
+            <p>${post.content}</p>
+          `;
+          postContainer.appendChild(postDiv);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
