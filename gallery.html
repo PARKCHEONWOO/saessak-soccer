@@ -48,7 +48,7 @@
   </style>
 </head>
 <body>
-  <h1>📷 활동사진 갤러리</h1>
+  <h1>📷 활동사진 게러리</h1>
 
   <div id="uploadSection" style="display: none;">
     <input type="file" id="fileInput" multiple accept="image/*">
@@ -57,9 +57,9 @@
 
   <div class="gallery" id="gallery"></div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyD_tdw1VpNz2FdJw2sG0KesepHxVbIzACI",
@@ -69,6 +69,7 @@
       messagingSenderId: "8582110466",
       appId: "1:8582110466:web:acb7bd3a0858a80fb0361b"
     };
+
     firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
     const auth = firebase.auth();
@@ -86,6 +87,8 @@
             gallery.appendChild(img);
           });
         });
+      }).catch(err => {
+        console.error("이미지 불러오기 오류:", err);
       });
     }
 
@@ -96,8 +99,12 @@
         const file = files[i];
         const fileRef = storage.ref().child("images/" + Date.now() + "_" + file.name);
         fileRef.put(file).then(() => {
-          alert("사진 업로드 완료!");
-          location.reload();
+          if (i === files.length - 1) {
+            alert("사진 업로드 완료!");
+            location.reload();
+          }
+        }).catch(err => {
+          alert("업로드 실패: " + err.message);
         });
       }
     }
